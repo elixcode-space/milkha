@@ -1,0 +1,38 @@
+```
+======================================================================
+Milkha Cross-Language Benchmark: FastAPI vs Mojo
+======================================================================
+
+Running FastAPI benchmarks (10000 iterations)...
+----------------------------------------------------------------------
+Endpoint                          Latency           Throughput
+----------------------------------------------------------------------
+  GET /                        806.131 us/req         1240 req/s
+  GET /users/{id}              748.120 us/req         1337 req/s
+  POST /items                  779.470 us/req         1283 req/s
+  DELETE /users/{id}           810.901 us/req         1233 req/s
+----------------------------------------------------------------------
+
+Expected Milkha (Mojo) performance:
+  FastAPI uses Python interpreter + async overhead per request.
+  Milkha compiles to native code via Mojo, eliminating:
+    - Python interpreter overhead
+    - Per-request async machinery
+    - GIL contention
+  Expected speedup: ~10-50x for simple endpoints (based on
+  FastAPi vs compiled-language benchmarks in TFB).
+
+  Example projections:
+  Endpoint                          FastAPI        Expected Mojo
+  ------------------------- --------------- --------------------
+  GET /                           1240 req/s           37215 req/s
+  GET /users/{id}                 1337 req/s           40101 req/s
+  POST /items                     1283 req/s           38488 req/s
+  DELETE /users/{id}              1233 req/s           36996 req/s
+
+======================================================================
+Note: Actual Mojo performance depends on hardware, Flare version,
+and compiler optimizations. Run with `mojo build -D ASSERT=none -O3`
+for production performance.
+======================================================================
+```

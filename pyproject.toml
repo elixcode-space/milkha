@@ -33,6 +33,11 @@ dev = [
     "twine>=4.0",
     "build>=1.0",
 ]
+bench = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "requests>=2.31",
+]
 
 [project.urls]
 Homepage = "https://github.com/elixcode-space/milkha"

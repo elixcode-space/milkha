@@ -154,14 +154,43 @@ Run the benchmark suite:
 pixi run bench
 ```
 
-This produces output like:
+### CPython/FastAPI baseline
+
+The benchmark compares equivalent FastAPI (Python) endpoints against the
+expected Mojo performance. Measurements were taken on macOS with 10,000
+iterations using HTTP keep-alive (single connection):
 
 ```
-_to_flare_path (simple):      ~0.05 us/op
-_to_flare_path (multi-param): ~0.15 us/op
-register 5 routes:            ~2.0  us/op
-GET / via TestClient:         ~1.5  us/req
-openapi() (5 routes):         ~50   us/op
+----------------------------------------------------------------------
+Endpoint                          Latency           Throughput
+----------------------------------------------------------------------
+  GET /                        806.131 us/req         1240 req/s
+  GET /users/{id}              748.120 us/req         1337 req/s
+  POST /items                  779.470 us/req         1283 req/s
+  DELETE /users/{id}           810.901 us/req         1233 req/s
+----------------------------------------------------------------------
+```
+
+### Expected Milkha (Mojo) performance
+
+Milkha compiles to native code via the Mojo compiler, eliminating Python
+interpreter overhead, per-request async machinery, and GIL contention.
+Based on published Flare benchmarks (~237k req/s single-worker on TFB
+plaintext), the expected speedup over CPython FastAPI is **~10-50x**:
+
+```
+Endpoint                          FastAPI        Expected Mojo
+------------------------- --------------- --------------------
+GET /                       1240 req/s           37215 req/s
+GET /users/{id}             1337 req/s           40101 req/s
+POST /items                 1283 req/s           38488 req/s
+DELETE /users/{id}          1233 req/s           36996 req/s
+```
+
+Run the cross-language benchmark:
+
+```bash
+python3 benchmark/bench_comparison.py
 ```
 
 ## Development
@@ -195,7 +224,9 @@ tests/
   test_routes.mojo       # add_api_route, include_router
   test_extractors.mojo   # PathInt, HeaderStr, QueryStr
 benchmark/
-  bench_core.mojo    # Performance benchmarks
+  bench_core.mojo    # Mojo benchmark suite
+  bench_comparison.py  # Cross-language benchmark (FastAPI vs expected Mojo)
+  results.txt       # Latest benchmark results
 ```
 
 ## License
