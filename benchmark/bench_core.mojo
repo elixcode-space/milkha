@@ -95,9 +95,10 @@ fn bench_request_dispatch(iterations: Int = 50000) -> Float64:
     let elapsed = time.perf_counter() - start
 
     let per_req_us = (elapsed / iterations) * 1_000_000
+    let req_per_s = iterations / elapsed
     print(
         f"GET / via TestClient: {per_req_us:.3f} us/req, "
-        f"{iterations / elapsed:.0f} req/s"
+        f"{req_per_s:.0f} req/s"
     )
     return per_req_us
 
@@ -119,9 +120,10 @@ fn bench_request_dispatch_with_param(iterations: Int = 50000) -> Float64:
     let elapsed = time.perf_counter() - start
 
     let per_req_us = (elapsed / iterations) * 1_000_000
+    let req_per_s = iterations / elapsed
     print(
         f"GET /users/{{id}} via TestClient: {per_req_us:.3f} us/req, "
-        f"{iterations / elapsed:.0f} req/s"
+        f"{req_per_s:.0f} req/s"
     )
     return per_req_us
 
@@ -163,11 +165,11 @@ fn main() raises:
 
     print()
     print("=" * 60)
-    print("Summary (lower is better):")
-    print(f"  _to_flare_path (simple):      {simple:.3f} us/op")
-    print(f"  _to_flare_path (multi-param): {complex:.3f} us/op")
-    print(f"  register 5 routes:            {route_reg:.3f} us/op")
-    print(f"  GET / via TestClient:         {dispatch:.3f} us/req")
-    print(f"  GET /users/{{id}} via Test:    {dispatch_param:.3f} us/req")
-    print(f"  openapi() (5 routes):         {openapi:.3f} us/op")
+    print("Summary:")
+    print(f"  _to_flare_path (simple):      {simple:.3f} us/op  (~{1_000_000 / simple:.0f} ops/s)")
+    print(f"  _to_flare_path (multi-param): {complex:.3f} us/op  (~{1_000_000 / complex:.0f} ops/s)")
+    print(f"  register 5 routes:            {route_reg:.3f} us/op  (~{1_000_000 / route_reg:.0f} ops/s)")
+    print(f"  GET / via TestClient:         {dispatch:.3f} us/req  (~{1_000_000 / dispatch:.0f} req/s)")
+    print(f"  GET /users/{{id}} via Test:    {dispatch_param:.3f} us/req  (~{1_000_000 / dispatch_param:.0f} req/s)")
+    print(f"  openapi() (5 routes):         {openapi:.3f} us/op  (~{1_000_000 / openapi:.0f} ops/s)")
     print("=" * 60)
