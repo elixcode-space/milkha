@@ -8,7 +8,8 @@ preview = ["pixi-build"]
 
 [tasks]
 test = "mojo test tests/"
-lint = "mojo check tests/ milkha/"
+lint = "mojo check tests/ milkha/ benchmark/"
+bench = { cmd = "mojo run benchmark/bench_core.mojo", description = "Run benchmark suite" }
 run-example = { cmd = "mojo run milkha/examples/basic.mojo", description = "Run the basic example server" }
 run-openapi = { cmd = "mojo run milkha/examples/openapi.mojo", description = "Generate and print OpenAPI spec" }
 

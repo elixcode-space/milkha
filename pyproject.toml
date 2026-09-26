@@ -46,7 +46,10 @@ packages = ["milkha"]
 include = [
     "milkha/",
     "tests/",
+    "benchmark/",
     "pixi.toml",
     "README.md",
     "LICENSE",
+    "MANIFEST.in",
+    ".github/workflows/",
 ]

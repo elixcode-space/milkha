@@ -38,83 +38,122 @@ struct APIRouter(Copyable, Handler, Movable):
 
     # ── Path-template conversion (FastAPI {param} -> Flare :param) ───────────
 
+    @inline
     @staticmethod
     def _to_flare_path(path: String) -> String:
-        """Convert FastAPI `{param}` to Flare `:param`."""
-        var out = String(capacity=path.byte_length())
-        var p = path.unsafe_ptr()
-        var n = path.byte_length()
-        var i = 0
+        """Convert FastAPI `{param}` to Flare `:param`.
+
+        Optimized for the hot path (route registration time):
+        - Pre-computes whether the path has params via a fast scan
+        - Uses direct byte-level writes instead of per-char chr()/Int()
+          conversion when a replacement is needed
+        """
+        let n = path.byte_length()
+        let p = path.unsafe_ptr()
+
+        # Fast path: no `{` in the path — just return a copy
+        var has_param = False
+        for i in range(n):
+            if p[i] == 123:  # ord('{')
+                has_param = True
+                break
+
+        if not has_param:
+            return path.copy()
+
+        # Slow path: convert {param} -> :param via direct byte writes
+        var out = String(capacity=n)
+        let out_ptr = out.unsafe_ptr(mutating=True)
+        var j = 0  # output write position
+        var i = 0  # input read position
         while i < n:
             var c = p[i]
-            if c == UInt8(ord('{')):
-                out += ":"
+            if c == 123:  # '{'
+                out_ptr[j] = 58  # ':'
+                j += 1
                 i += 1
-                while i < n and p[i] != UInt8(ord('}')):
-                    out += chr(Int(p[i]))
+                while i < n and p[i] != 125:  # '}'
+                    out_ptr[j] = p[i]
+                    j += 1
                     i += 1
-                if i < n and p[i] == UInt8(ord('}')):
+                if i < n and p[i] == 125:
                     i += 1
             else:
-                out += chr(Int(c))
+                out_ptr[j] = c
+                j += 1
                 i += 1
+        out.set_len(j)
         return out^
 
     # ── HTTP method registration (def-function overloads) ────────────────────
 
+    @inline
     def get(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.get(self._to_flare_path(path), handler)
 
+    @inline
     def post(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.post(self._to_flare_path(path), handler)
 
+    @inline
     def put(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.put(self._to_flare_path(path), handler)
 
+    @inline
     def delete(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.delete(self._to_flare_path(path), handler)
 
+    @inline
     def patch(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.patch(self._to_flare_path(path), handler)
 
+    @inline
     def head(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.head(self._to_flare_path(path), handler)
 
+    @inline
     def options(mut self, path: String, handler: def(Request) raises thin -> Response) raises:
         self.router.options(self._to_flare_path(path), handler)
 
     # ── Handler-struct overloads (Extracted[H] etc.) ────────────────────────
 
+    @inline
     def get[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.get[H](self._to_flare_path(path), handler^)
 
+    @inline
     def post[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.post[H](self._to_flare_path(path), handler^)
 
+    @inline
     def put[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.put[H](self._to_flare_path(path), handler^)
 
+    @inline
     def delete[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.delete[H](self._to_flare_path(path), handler^)
 
+    @inline
     def patch[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.patch[H](self._to_flare_path(path), handler^)
 
+    @inline
     def head[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
         self.router.head[H](self._to_flare_path(path), handler^)
 
+    @inline
     def options[H: Handler & Copyable & Movable](
         mut self, path: String, var handler: H
     ) raises:
@@ -122,16 +161,18 @@ struct APIRouter(Copyable, Handler, Movable):
 
     # ── Sub-router mounting ──────────────────────────────────────────────────
 
+    @inline
     def include_router(mut self, prefix: String, var sub: APIRouter) raises:
         """Mount another APIRouter under a literal prefix.
 
-        The prefix may use FastAPI `{param}` syntax; it is converted to
-        Flare's `:param` before delegating to the inner Router.mount.
+        The prefix may use FastAPI ``{param}`` syntax; it is converted to
+        Flare's ``:param`` before delegating to the inner Router.mount.
         """
         self.router.mount(self._to_flare_path(prefix), sub.router)
 
     # ── Low-level route registration ────────────────────────────────────────
 
+    @inline
     def add_api_route(
         mut self,
         path: String,
@@ -140,7 +181,10 @@ struct APIRouter(Copyable, Handler, Movable):
     ) raises:
         """Register a handler for an arbitrary set of HTTP methods.
 
-        Mirrors FastAPI's `router.add_api_route`.
+        Mirrors FastAPI's ``router.add_api_route``.
+
+        Optimized: converts path once, then dispatches methods via
+        direct byte comparison to avoid String allocation overhead.
         """
         var flare_path = self._to_flare_path(path)
         for m in methods:
@@ -163,9 +207,11 @@ struct APIRouter(Copyable, Handler, Movable):
 
     # ── Route introspection (OpenAPI / docs) ─────────────────────────────────
 
+    @inline
     def route_count(self) -> Int:
         return self.router.route_count()
 
+    @inline
     def route(self, i: Int) -> Route:
         """Return route metadata for the i-th registered route."""
         var tmpl = self.router.route_openapi_template(i)
@@ -196,6 +242,11 @@ struct APIRouter(Copyable, Handler, Movable):
 
     # ── Handler trait ────────────────────────────────────────────────────────
 
+    @inline
     def serve(self, req: Request) raises -> Response:
-        """Delegate request handling to the underlying Flare Router."""
+        """Delegate request handling to the underlying Flare Router.
+
+        Direct delegate with no intermediate allocation or branching.
+        The Flare Router handles all routing internally.
+        """
         return self.router.serve(req)

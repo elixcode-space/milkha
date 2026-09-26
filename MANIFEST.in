@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include pixi.toml
+recursive-include milkha *.mojo
+recursive-include tests *.mojo
+recursive-include benchmark *.mojo
+recursive-include .github/workflows *.yml

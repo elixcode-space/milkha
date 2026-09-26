@@ -14,7 +14,6 @@ Public API:
 from flare.prelude import *  # Request, Response, Router, HttpServer, ok, etc.
 from flare.http import (
     Handler,
-    Extracted,
     PathInt,
     PathStr,
     QueryInt,
@@ -25,7 +24,7 @@ from flare.http import (
     Cookies,
 )
 from .core import APIRouter, Route
-from .extract import Extracted as Extracted
+from .extract import Extracted
 from .openapi import spec_from_router
 from .test import TestClient
 
