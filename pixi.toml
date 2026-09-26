@@ -1,0 +1,17 @@
+[workspace]
+authors = ["Niranjan Anandkumar <nirunitk@gmail.com>"]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+name = "milkha"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+preview = ["pixi-build"]
+
+[tasks]
+test = "mojo test tests/"
+lint = "mojo check tests/ milkha/"
+run-example = { cmd = "mojo run milkha/examples/basic.mojo", description = "Run the basic example server" }
+run-openapi = { cmd = "mojo run milkha/examples/openapi.mojo", description = "Generate and print OpenAPI spec" }
+
+[dependencies]
+mojo = ">=1.1.0.dev2026091005,<2"
+flare = { git = "https://github.com/ehsanmok/flare", tag = "v0.10.0" }
