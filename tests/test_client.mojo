@@ -5,11 +5,11 @@ from std.testing import assert_equal, assert_true, TestSuite
 from milkha import FastAPI, Request, Response, ok, ok_json
 
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("Hello, Milkha!")
 
 
-def create_item(req: Request) -> Response:
+def create_item(req: Request) raises -> Response:
     return ok_json('{"message": "created"}')
 
 
@@ -31,7 +31,7 @@ def test_post_method():
 
 
 def test_put_method():
-    def update(req: Request) -> Response:
+    def update(req: Request) raises -> Response:
         return ok("updated")
 
     app = FastAPI()
@@ -42,7 +42,7 @@ def test_put_method():
 
 
 def test_delete_method():
-    def delete(req: Request) -> Response:
+    def delete(req: Request) raises -> Response:
         return ok("deleted")
 
     app = FastAPI()
@@ -61,7 +61,7 @@ def test_not_found():
 
 
 def test_ok_helper():
-    def health(req: Request) -> Response:
+    def health(req: Request) raises -> Response:
         return ok("healthy")
 
     app = FastAPI()

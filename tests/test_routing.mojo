@@ -2,14 +2,14 @@
 
 from std.testing import assert_equal, assert_true, TestSuite
 
-from milkha import FastAPI, APIRouter, Route
+from milkha import FastAPI, APIRouter, Route, Request, Response, ok
 
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("Hello, Milkha!")
 
 
-def echo_user(req: Request) -> Response:
+def echo_user(req: Request) raises -> Response:
     return ok("user " + req.param("user_id"))
 
 

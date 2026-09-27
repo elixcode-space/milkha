@@ -10,15 +10,15 @@ from milkha.extract import PathInt, HeaderStr, Extracted
 app = FastAPI()
 
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("Hello, Milkha!")
 
 
-def get_user(req: Request) -> Response:
+def get_user(req: Request) raises -> Response:
     return ok(f"user {req.param('user_id')}")
 
 
-def get_item(req: Request) -> Response:
+def get_item(req: Request) raises -> Response:
     let item_id = PathInt["item_id"].extract(req).value
     let user_agent = HeaderStr["User-Agent"].extract(req).value
     return ok(f"item {item_id.value} for {user_agent.value}")

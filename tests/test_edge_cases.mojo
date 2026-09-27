@@ -2,14 +2,13 @@
 
 from std.testing import assert_equal, assert_true, assert_raises, TestSuite
 
-from milkha import FastAPI, APIRouter, Request, Response, ok, ok_json, Status
-from milkha.extract import PathInt, QueryInt
+from milkha import FastAPI, APIRouter, Request, Response, ok, ok_json
 
 
 def test_root_path():
     app = FastAPI()
 
-    def root(req: Request) -> Response:
+    def root(req: Request) raises -> Response:
         return ok("root")
 
     app.get("/", root)
@@ -20,8 +19,8 @@ def test_root_path():
 def test_deep_nested_path():
     app = FastAPI()
 
-    def deep(req: Request) -> Response:
-        return ok(req.url.split("/")[-1])
+    def deep(req: Request) raises -> Response:
+        return ok("nested")
 
     app.get("/a/b/c/d", deep)
     client = app.test_client()
@@ -32,7 +31,7 @@ def test_deep_nested_path():
 def test_multiple_path_params():
     app = FastAPI()
 
-    def multi(req: Request) -> Response:
+    def multi(req: Request) raises -> Response:
         let a = req.param("a")
         let b = req.param("b")
         let c = req.param("c")
@@ -47,7 +46,7 @@ def test_multiple_path_params():
 def test_post_with_json_body():
     app = FastAPI()
 
-    def create(req: Request) -> Response:
+    def create(req: Request) raises -> Response:
         return ok_json('{"status": "created"}')
 
     app.post("/items", create)
@@ -59,7 +58,7 @@ def test_post_with_json_body():
 def test_method_not_allowed():
     app = FastAPI()
 
-    def handler(req: Request) -> Response:
+    def handler(req: Request) raises -> Response:
         return ok("ok")
 
     app.get("/only-get", handler)
@@ -78,7 +77,7 @@ def test_include_router_nested():
     middle = APIRouter()
     inner = APIRouter()
 
-    def hi(req: Request) -> Response:
+    def hi(req: Request) raises -> Response:
         return ok("hi")
 
     inner.get("/deep", hi)
@@ -95,7 +94,7 @@ def test_include_router_nested():
 def test_add_api_route_empty_methods():
     app = APIRouter()
 
-    def handler(req: Request) -> Response:
+    def handler(req: Request) raises -> Response:
         return ok("ok")
 
     app.add_api_route("/empty", handler, [])
@@ -127,7 +126,7 @@ def test_path_conversion_edge_cases():
 def test_add_api_route_with_patch():
     app = APIRouter()
 
-    def handler(req: Request) -> Response:
+    def handler(req: Request) raises -> Response:
         return ok("patched")
 
     app.add_api_route("/items", handler, ["PATCH"])

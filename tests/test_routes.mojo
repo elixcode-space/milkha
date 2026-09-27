@@ -6,7 +6,7 @@ from milkha import FastAPI, Request, Response, ok
 from milkha.core import APIRouter
 
 
-def handler(req: Request) -> Response:
+def handler(req: Request) raises -> Response:
     return ok("ok")
 
 

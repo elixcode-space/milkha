@@ -9,11 +9,11 @@ from flare.http.middleware import Logger, Cors, CorsConfig
 from flare.net import SocketAddr
 
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("home")
 
 
-def items(req: Request) -> Response:
+def items(req: Request) raises -> Response:
     let id = PathInt["id"].extract(req).value
     return ok(f"item {id.value}")
 

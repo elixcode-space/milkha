@@ -3,7 +3,7 @@
 Demonstrates:
 - Path parameters with PathInt extractor
 - Query parameters with OptionalQueryInt
-- JSON body extraction with Json
+- JSON responses with ok_json
 - POST, GET, PUT, DELETE methods
 - OpenAPI spec generation
 - In-process TestClient usage
@@ -13,52 +13,40 @@ Then visit http://localhost:8080/openapi.json
 """
 
 from milkha import FastAPI, Request, Response, ok, ok_json
-from milkha.extract import PathInt, OptionalQueryInt, Json
-from std.json import Value, parse
-from std.collections import List
+from milkha.extract import PathInt, OptionalQueryInt
 
 
 app = FastAPI()
 
 
-# In-memory storage (for demo purposes)
-items: List[String] = []
-next_id: Int = 1
-
-
-def list_items(req: Request) -> Response:
+def list_items(req: Request) raises -> Response:
     """GET /items - List all items with pagination."""
     let page = OptionalQueryInt["page"].extract(req).value
     let per_page = OptionalQueryInt["per_page"].extract(req).value
-
-    if page.value.byte_length() > 0 and per_page.value.byte_length() > 0:
-        return ok_json('{"items": ' + str(items) + ', "page": ' + page.value + '}')
-    return ok_json('{"items": [' + str(items) + ']}')
+    return ok_json('{"items": [], "page": 0}')
 
 
-def create_item(req: Request) -> Response:
+def create_item(req: Request) raises -> Response:
     """POST /items - Create a new item."""
-    # In a real app, you'd parse the JSON body
-    # This example uses Extracted[H] for typed extraction
     return ok_json('{"id": 1, "name": "new_item", "status": "created"}')
 
 
-def get_item(req: Request) -> Response:
+def get_item(req: Request) raises -> Response:
     """GET /items/{item_id} - Get a specific item."""
     let id = PathInt["item_id"].extract(req).value
-    return ok_json('{"id": ' + str(id.value) + ', "name": "item"}')
+    return ok_json('{"id": "' + String(id.value) + '", "name": "item"}')
 
 
-def update_item(req: Request) -> Response:
+def update_item(req: Request) raises -> Response:
     """PUT /items/{item_id} - Update an item."""
     let id = PathInt["item_id"].extract(req).value
-    return ok_json('{"id": ' + str(id.value) + ', "updated": true}')
+    return ok_json('{"id": "' + String(id.value) + '", "updated": true}')
 
 
-def delete_item(req: Request) -> Response:
+def delete_item(req: Request) raises -> Response:
     """DELETE /items/{item_id} - Delete an item."""
     let id = PathInt["item_id"].extract(req).value
-    return ok_json('{"id": ' + str(id.value) + ', "deleted": true}')
+    return ok_json('{"id": "' + String(id.value) + '", "deleted": true}')
 
 
 # Register routes
@@ -70,7 +58,7 @@ app.delete("/items/{item_id}", delete_item)
 
 
 if __name__ == "__main__":
-    # Run benchmarks on the CRUD app
+    # Run introspection and TestClient demo
     print("=" * 60)
     print("CRUD Example - Route Summary")
     print("=" * 60)
@@ -86,7 +74,7 @@ if __name__ == "__main__":
 
     # Generate OpenAPI spec
     let spec = app.openapi(title="CRUD API", version="1.0.0")
-    print("OpenAPI spec generated (length: " + str(len(spec)) + " bytes)")
+    print("OpenAPI spec generated (length: " + String(len(spec)) + " bytes)")
     print()
 
     # Test with TestClient

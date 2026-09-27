@@ -9,11 +9,11 @@ from milkha.extract import PathInt, Extracted
 app = FastAPI()
 
 
-def health(req: Request) -> Response:
+def health(req: Request) raises -> Response:
     return ok("ok")
 
 
-def get_user(req: Request) -> Response:
+def get_user(req: Request) raises -> Response:
     let id = PathInt["id"].extract(req).value
     return ok(f"user {id.value}")
 

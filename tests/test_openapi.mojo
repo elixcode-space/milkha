@@ -5,11 +5,11 @@ from std.testing import assert_equal, assert_true, TestSuite
 from milkha import FastAPI, Request, Response, ok
 
 
-def health(req: Request) -> Response:
+def health(req: Request) raises -> Response:
     return ok("ok")
 
 
-def get_user(req: Request) -> Response:
+def get_user(req: Request) raises -> Response:
     return ok("user " + req.param("id"))
 
 
