@@ -1,7 +1,9 @@
 include README.md
 include LICENSE
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
 include pixi.toml
-recursive-include milkha *.mojo
+recursive-include milkha *.mojo *.py
 recursive-include tests *.mojo
-recursive-include benchmark *.mojo
+recursive-include benchmark *.mojo *.py
 recursive-include .github/workflows *.yml
