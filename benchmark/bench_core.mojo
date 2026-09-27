@@ -5,60 +5,71 @@ Measures the performance of:
 2. Route registration: app.get() / app.post() throughput
 3. Request dispatch: TestClient end-to-end latency
 
-Run with: mojo run benchmark/bench_core.mojo
+Run with: `pixi run bench`
 """
 
-import time
+from std.time import monotonic
 
 from milkha import FastAPI, Request, Response, ok
 from milkha.core import APIRouter
 
 
-fn dummy_handler(req: Request) -> Response:
+@always_inline
+def now_ns() -> Int:
+    return monotonic()
+
+
+def dummy_handler(req: Request) raises -> Response:
     return ok("ok")
 
 
-fn bench_path_conversion(iterations: Int = 100000) -> Float64:
+def bench_path_conversion(iterations: Int = 100000) raises -> Float64:
     """Benchmark _to_flare_path with a multi-param path."""
-    let path = "/api/v1/orgs/{org}/repos/{repo}/issues/{issue_id}"
-    let expected = "/api/v1/orgs/:org/repos/:repo/issues/:issue_id"
+    var path = "/api/v1/orgs/{org}/repos/{repo}/issues/{issue_id}"
+    var expected = "/api/v1/orgs/:org/repos/:repo/issues/:issue_id"
 
-    let start = time.perf_counter()
+    var start = now_ns()
     for i in range(iterations):
         var result = APIRouter._to_flare_path(path)
         if result != expected:
             raise Error("path conversion mismatch")
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_op_us = (elapsed / iterations) * 1_000_000
+    var per_op_us = (elapsed / Float64(iterations)) * 1e6
     print(
-        f"_to_flare_path ({path!r}): {per_op_us:.3f} us/op, "
-        f"{iterations / elapsed:.0f} ops/s"
+        "_to_flare_path (multi-param): ",
+        per_op_us,
+        " us/op, ",
+        Float64(iterations) / elapsed,
+        " ops/s",
     )
     return per_op_us
 
 
-fn bench_path_conversion_simple(iterations: Int = 100000) -> Float64:
+def bench_path_conversion_simple(iterations: Int = 100000) raises -> Float64:
     """Benchmark _to_flare_path with a simple path (no params)."""
-    let path = "/health"
-    let start = time.perf_counter()
+    var path = "/health"
+    var start = now_ns()
     for i in range(iterations):
         var result = APIRouter._to_flare_path(path)
         if result != path:
             raise Error("path conversion mismatch for simple path")
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_op_us = (elapsed / iterations) * 1_000_000
+    var per_op_us = (elapsed / Float64(iterations)) * 1e6
     print(
-        f"_to_flare_path (simple): {per_op_us:.3f} us/op, "
-        f"{iterations / elapsed:.0f} ops/s"
+        "_to_flare_path (simple): ",
+        per_op_us,
+        " us/op, ",
+        Float64(iterations) / elapsed,
+        " ops/s",
     )
     return per_op_us
 
 
-fn bench_route_registration(iterations: Int = 10000) -> Float64:
+def bench_route_registration(iterations: Int = 10000) raises -> Float64:
     """Benchmark route registration throughput."""
-    let start = time.perf_counter()
+    var start = now_ns()
     for i in range(iterations):
         var app = APIRouter()
         app.get("/users/{id}", dummy_handler)
@@ -66,17 +77,14 @@ fn bench_route_registration(iterations: Int = 10000) -> Float64:
         app.put("/items/{id}", dummy_handler)
         app.delete("/items/{id}", dummy_handler)
         app.patch("/items/{id}", dummy_handler)
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_op_us = (elapsed / iterations) * 1_000_000
-    print(
-        f"register 5 routes: {per_op_us:.3f} us/op, "
-        f"{iterations / elapsed:.0f} ops/s"
-    )
+    var per_op_us = (elapsed / Float64(iterations)) * 1e6
+    print("register 5 routes: ", per_op_us, " us/op, ", Float64(iterations) / elapsed, " ops/s")
     return per_op_us
 
 
-fn bench_request_dispatch(iterations: Int = 50000) -> Float64:
+def bench_request_dispatch(iterations: Int = 50000) raises -> Float64:
     """Benchmark end-to-end request dispatch via TestClient."""
     var app = FastAPI()
     app.get("/", dummy_handler)
@@ -89,21 +97,19 @@ fn bench_request_dispatch(iterations: Int = 50000) -> Float64:
     for i in range(100):
         _ = client.get("/")
 
-    let start = time.perf_counter()
+    var start = now_ns()
     for i in range(iterations):
         _ = client.get("/")
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_req_us = (elapsed / iterations) * 1_000_000
-    let req_per_s = iterations / elapsed
+    var per_req_us = (elapsed / Float64(iterations)) * 1e6
     print(
-        f"GET / via TestClient: {per_req_us:.3f} us/req, "
-        f"{req_per_s:.0f} req/s"
+        "GET / via TestClient: ", per_req_us, " us/req, ", Float64(iterations) / elapsed, " req/s"
     )
     return per_req_us
 
 
-fn bench_request_dispatch_with_param(iterations: Int = 50000) -> Float64:
+def bench_request_dispatch_with_param(iterations: Int = 50000) raises -> Float64:
     """Benchmark request dispatch with path parameter extraction."""
     var app = FastAPI()
     app.get("/users/{id}", dummy_handler)
@@ -114,21 +120,23 @@ fn bench_request_dispatch_with_param(iterations: Int = 50000) -> Float64:
     for i in range(100):
         _ = client.get("/users/42")
 
-    let start = time.perf_counter()
+    var start = now_ns()
     for i in range(iterations):
         _ = client.get("/users/42")
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_req_us = (elapsed / iterations) * 1_000_000
-    let req_per_s = iterations / elapsed
+    var per_req_us = (elapsed / Float64(iterations)) * 1e6
     print(
-        f"GET /users/{{id}} via TestClient: {per_req_us:.3f} us/req, "
-        f"{req_per_s:.0f} req/s"
+        "GET /users/{id} via TestClient: ",
+        per_req_us,
+        " us/req, ",
+        Float64(iterations) / elapsed,
+        " req/s",
     )
     return per_req_us
 
 
-fn bench_openapi_generation(iterations: Int = 1000) -> Float64:
+def bench_openapi_generation(iterations: Int = 1000) raises -> Float64:
     """Benchmark OpenAPI spec generation."""
     var app = FastAPI()
     app.get("/", dummy_handler)
@@ -137,39 +145,36 @@ fn bench_openapi_generation(iterations: Int = 1000) -> Float64:
     app.put("/items/{id}", dummy_handler)
     app.delete("/items/{id}", dummy_handler)
 
-    let start = time.perf_counter()
+    var start = now_ns()
     for i in range(iterations):
         _ = app.openapi()
-    let elapsed = time.perf_counter() - start
+    var elapsed = Float64(now_ns() - start) / 1e9
 
-    let per_op_us = (elapsed / iterations) * 1_000_000
-    print(
-        f"openapi() (5 routes): {per_op_us:.3f} us/op, "
-        f"{iterations / elapsed:.0f} ops/s"
-    )
+    var per_op_us = (elapsed / Float64(iterations)) * 1e6
+    print("openapi() (5 routes): ", per_op_us, " us/op, ", Float64(iterations) / elapsed, " ops/s")
     return per_op_us
 
 
-fn main() raises:
+def main() raises:
     print("=" * 60)
     print("Milkha Benchmark Suite")
     print("=" * 60)
     print()
 
-    let simple = bench_path_conversion_simple(100000)
-    let complex = bench_path_conversion(100000)
-    let route_reg = bench_route_registration(10000)
-    let dispatch = bench_request_dispatch(50000)
-    let dispatch_param = bench_request_dispatch_with_param(50000)
-    let openapi = bench_openapi_generation(1000)
+    var simple = bench_path_conversion_simple(100000)
+    var complex = bench_path_conversion(100000)
+    var route_reg = bench_route_registration(10000)
+    var dispatch = bench_request_dispatch(50000)
+    var dispatch_param = bench_request_dispatch_with_param(50000)
+    var openapi = bench_openapi_generation(1000)
 
     print()
     print("=" * 60)
     print("Summary:")
-    print(f"  _to_flare_path (simple):      {simple:.3f} us/op  (~{1_000_000 / simple:.0f} ops/s)")
-    print(f"  _to_flare_path (multi-param): {complex:.3f} us/op  (~{1_000_000 / complex:.0f} ops/s)")
-    print(f"  register 5 routes:            {route_reg:.3f} us/op  (~{1_000_000 / route_reg:.0f} ops/s)")
-    print(f"  GET / via TestClient:         {dispatch:.3f} us/req  (~{1_000_000 / dispatch:.0f} req/s)")
-    print(f"  GET /users/{{id}} via Test:    {dispatch_param:.3f} us/req  (~{1_000_000 / dispatch_param:.0f} req/s)")
-    print(f"  openapi() (5 routes):         {openapi:.3f} us/op  (~{1_000_000 / openapi:.0f} ops/s)")
+    print("  _to_flare_path (simple):      ", simple, " us/op")
+    print("  _to_flare_path (multi-param): ", complex, " us/op")
+    print("  register 5 routes:            ", route_reg, " us/op")
+    print("  GET / via TestClient:         ", dispatch, " us/req")
+    print("  GET /users/{id} via Test:     ", dispatch_param, " us/req")
+    print("  openapi() (5 routes):         ", openapi, " us/op")
     print("=" * 60)

@@ -1,12 +1,10 @@
 """OpenAPI example: generate a Milkha API spec.
 
-Run with: `mojo run examples/openapi.mojo`
+Run with: `pixi run example openapi`
 """
 
-from milkha import FastAPI, Request, Response, ok
-from milkha.extract import PathInt, Extracted
-
-app = FastAPI()
+from milkha import APIRouter, FastAPI, Request, Response, ok
+from milkha.extract import PathInt
 
 
 def health(req: Request) raises -> Response:
@@ -14,13 +12,17 @@ def health(req: Request) raises -> Response:
 
 
 def get_user(req: Request) raises -> Response:
-    let id = PathInt["id"].extract(req).value
-    return ok(f"user {id.value}")
+    var id = PathInt["id"].extract(req).value
+    return ok("user " + String(id))
 
 
-app.get("/", health)
-app.get("/users/{id}", get_user)
+def build_app() raises -> APIRouter:
+    var app = FastAPI()
+    app.get("/", health)
+    app.get("/users/{id}", get_user)
+    return app^
 
-if __name__ == "__main__":
-    let spec = app.openapi()
-    print(spec)
+
+def main() raises:
+    var app = build_app()
+    print(app.openapi())

@@ -7,12 +7,22 @@ version = "0.1.1"
 preview = ["pixi-build"]
 
 [tasks]
-test = "mojo test tests/"
-lint = "mojo check tests/ milkha/ benchmark/"
-bench = { cmd = "mojo run benchmark/bench_core.mojo", description = "Run benchmark suite" }
-run-example = { cmd = "mojo run milkha/examples/basic.mojo", description = "Run the basic example server" }
-run-openapi = { cmd = "mojo run milkha/examples/openapi.mojo", description = "Generate and print OpenAPI spec" }
+# Mojo 1.0 ships no `mojo test` / `mojo check`, so each test file is a
+# standalone `def main()` driven by `mojo run`.
+test = { cmd = "bash scripts/test.sh", description = "Run every test file" }
+lint = { cmd = "bash scripts/lint.sh", description = "Type-check every source file" }
+bench = { cmd = "mojo run -I . benchmark/bench_core.mojo", description = "Run benchmark suite" }
+run-example = { cmd = "mojo run -I . milkha/examples/basic.mojo", description = "Run the basic example server" }
+run-openapi = { cmd = "mojo run -I . milkha/examples/openapi.mojo", description = "Generate and print OpenAPI spec" }
 
 [dependencies]
-mojo = ">=1.1.0.dev2026091005,<2"
-flare = { git = "https://github.com/ehsanmok/flare", tag = "v0.10.0" }
+mojo = "==1.0.0"
+# The `json` package that ships inside flare imports `max.gpu` at module
+# scope (json/parser.mojo -> json/gpu), so anything touching JSON parsing
+# fails to compile without the MAX runtime present.
+max-core = ">=25.5.0"
+# v0.10.1 is v0.10.0 plus one build fix (still unmerged upstream): flare
+# compiles libsimdjson_wrapper.so with `-include iterator` because simdjson
+# 4.6 + libc++ 23 no longer provides std::inserter transitively. Without it
+# the build fails with "no member named 'inserter' in namespace 'std'".
+flare = { git = "https://github.com/niranjanaryan/flare", tag = "v0.10.1" }

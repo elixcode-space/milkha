@@ -1,11 +1,11 @@
 """Comprehensive tests for Milkha edge cases and error handling."""
 
-from std.testing import assert_equal, assert_true, assert_raises, TestSuite
+from std.testing import assert_equal, assert_true, assert_raises
 
 from milkha import FastAPI, APIRouter, Request, Response, ok, ok_json
 
 
-def test_root_path():
+def test_root_path() raises:
     app = FastAPI()
 
     def root(req: Request) raises -> Response:
@@ -16,7 +16,7 @@ def test_root_path():
     assert_equal(client.get("/").status, 200)
 
 
-def test_deep_nested_path():
+def test_deep_nested_path() raises:
     app = FastAPI()
 
     def deep(req: Request) raises -> Response:
@@ -28,13 +28,13 @@ def test_deep_nested_path():
     assert_equal(resp.status, 200)
 
 
-def test_multiple_path_params():
+def test_multiple_path_params() raises:
     app = FastAPI()
 
     def multi(req: Request) raises -> Response:
-        let a = req.param("a")
-        let b = req.param("b")
-        let c = req.param("c")
+        var a = req.param("a")
+        var b = req.param("b")
+        var c = req.param("c")
         return ok(a + "/" + b + "/" + c)
 
     app.get("/x/{a}/y/{b}/z/{c}", multi)
@@ -43,7 +43,7 @@ def test_multiple_path_params():
     assert_equal(resp.status, 200)
 
 
-def test_post_with_json_body():
+def test_post_with_json_body() raises:
     app = FastAPI()
 
     def create(req: Request) raises -> Response:
@@ -55,7 +55,7 @@ def test_post_with_json_body():
     assert_equal(resp.status, 200)
 
 
-def test_method_not_allowed():
+def test_method_not_allowed() raises:
     app = FastAPI()
 
     def handler(req: Request) raises -> Response:
@@ -67,12 +67,12 @@ def test_method_not_allowed():
     assert_true(resp.status >= 400)
 
 
-def test_route_count_zero():
+def test_route_count_zero() raises:
     app = APIRouter()
     assert_equal(app.route_count(), 0)
 
 
-def test_include_router_nested():
+def test_include_router_nested() raises:
     outer = APIRouter()
     middle = APIRouter()
     inner = APIRouter()
@@ -91,7 +91,7 @@ def test_include_router_nested():
     assert_equal(resp.status, 200)
 
 
-def test_add_api_route_empty_methods():
+def test_add_api_route_empty_methods() raises:
     app = APIRouter()
 
     def handler(req: Request) raises -> Response:
@@ -103,27 +103,27 @@ def test_add_api_route_empty_methods():
     assert_equal(resp.status, 404)
 
 
-def test_openapi_empty_router():
+def test_openapi_empty_router() raises:
     app = APIRouter()
     spec = app.openapi()
-    assert_true(len(spec) > 0)
+    assert_true(spec.byte_length() > 0)
 
 
-def test_path_conversion_edge_cases():
-    let simple = APIRouter._to_flare_path("/health")
+def test_path_conversion_edge_cases() raises:
+    var simple = APIRouter._to_flare_path("/health")
     assert_equal(simple, "/health")
 
-    let empty = APIRouter._to_flare_path("")
+    var empty = APIRouter._to_flare_path("")
     assert_equal(empty, "")
 
-    let root = APIRouter._to_flare_path("/")
+    var root = APIRouter._to_flare_path("/")
     assert_equal(root, "/")
 
-    let only_param = APIRouter._to_flare_path("{id}")
+    var only_param = APIRouter._to_flare_path("{id}")
     assert_equal(only_param, ":id")
 
 
-def test_add_api_route_with_patch():
+def test_add_api_route_with_patch() raises:
     app = APIRouter()
 
     def handler(req: Request) raises -> Response:
@@ -136,4 +136,14 @@ def test_add_api_route_with_patch():
 
 
 def main() raises:
-    TestSuite.discover_tests[__functions_in_module__]().run()
+    test_root_path()
+    test_deep_nested_path()
+    test_multiple_path_params()
+    test_post_with_json_body()
+    test_method_not_allowed()
+    test_route_count_zero()
+    test_include_router_nested()
+    test_add_api_route_empty_methods()
+    test_openapi_empty_router()
+    test_path_conversion_edge_cases()
+    test_add_api_route_with_patch()

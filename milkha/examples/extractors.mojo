@@ -1,13 +1,23 @@
 """Typed extractors example: using Extracted and Flare extractors.
 
-Demonstrates Extracted[H] for auto‑injecting path params, query
-params, headers, and body fields.
+Demonstrates Extracted[H] for auto-injecting path params, query
+params, headers, and a typed JSON body.
 """
 
-from milkha import FastAPI, Request, Response, ok
-from milkha.extract import Extracted, PathInt, OptionalQueryInt, HeaderStr, Json
+from milkha import APIRouter, FastAPI, Request, Response, ok
+from milkha.extract import Extracted, JsonBody, PathInt, OptionalQueryInt, HeaderStr
+from flare.http import Handler
 
-app = FastAPI()
+
+# A typed JSON request body.
+@fieldwise_init
+struct NewItem(Copyable, Defaultable, Movable, Deinitable):
+    var name: String
+    var price: Float64
+
+    def __init__(out self):
+        self.name = ""
+        self.price = 0.0
 
 
 # A handler struct whose fields declare the expected inputs.
@@ -23,32 +33,34 @@ struct GetUser(Copyable, Defaultable, Handler, Movable):
         self.auth = HeaderStr["Authorization"]()
 
     def serve(self, req: Request) raises -> Response:
-        let auth_str = self.auth.value
-        return ok(f"user={self.id.value} page={self.page.value} auth={auth_str}")
+        return ok("user id=" + String(self.id.value) + " auth=" + self.auth.value)
 
 
-# A JSON body extractor struct.
+# A handler struct with a typed JSON body field.
 @fieldwise_init
 struct CreateItem(Copyable, Defaultable, Handler, Movable):
-    var name: String
-    var price: Float64
+    var body: JsonBody[NewItem]
 
     def __init__(out self):
-        self.name = ""
-        self.price = 0.0
+        self.body = JsonBody[NewItem]()
 
     def serve(self, req: Request) raises -> Response:
-        let body = Json.extract(req).value
-        return ok(f"created {self.name} at {self.price}")
+        return ok(
+            "created " + self.body.value.name + " at " + String(self.body.value.price)
+        )
 
 
-app.get[Extracted[GetUser]]("/users/{id}", Extracted[GetUser]())
-app.post[Extracted[CreateItem]]("/items", Extracted[CreateItem]())
+def build_app() raises -> APIRouter:
+    var app = FastAPI()
+    app.get[Extracted[GetUser]]("/users/{id}", Extracted[GetUser]())
+    app.post[Extracted[CreateItem]]("/items", Extracted[CreateItem]())
+    return app^
 
 
-if __name__ == "__main__":
+def main() raises:
     from flare.http import HttpServer
     from flare.net import SocketAddr
 
-    srv = HttpServer.bind(SocketAddr.localhost(8080))
-    srv.serve(app, num_workers=2)
+    var app = build_app()
+    var srv = HttpServer.bind(SocketAddr.localhost(8080))
+    srv.serve(app^, num_workers=2)

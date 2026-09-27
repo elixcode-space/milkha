@@ -6,8 +6,8 @@ guidelines for submitting changes.
 
 ## Development Environment
 
-Milkha requires the [Mojo programming language](https://docs.modular.com/mojo)
-and [pixi](https://pixi.sh) for dependency management.
+Milkha requires [pixi](https://pixi.sh); the pinned toolchain is Mojo 1.0.0
+(conda package `mojo = "==1.0.0"`) with Flare v0.10.0 pulled from git.
 
 ```bash
 git clone https://github.com/elixcode-space/milkha.git
@@ -17,13 +17,17 @@ pixi install
 
 ## Running Tests
 
-Tests are written in Mojo using Flare's `TestSuite`:
+Mojo 1.0 ships no `mojo test`, so every file under `tests/` is a standalone
+program with an explicit `main() raises:` that calls its test functions.
 
 ```bash
 pixi run test
 ```
 
 ## Running Linters
+
+There is no `mojo check` in Mojo 1.0; `lint` type-checks every source file
+with `mojo build`:
 
 ```bash
 pixi run lint

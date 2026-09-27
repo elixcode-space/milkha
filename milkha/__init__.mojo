@@ -23,6 +23,7 @@ from .core import APIRouter, Route
 from .extract import (
     Extracted,
     Extractor,
+    JsonBody,
     PathInt,
     PathStr,
     PathFloat,
@@ -52,55 +53,10 @@ from .extract import (
     Multipart,
 )
 from .openapi import spec_from_router
-from .test import TestClient
+from .test import TestClient, body_bytes
 
 # Re-export Status constants for FastAPI compatibility
-StatusCode = Status
-
-# Public exports
-__all__ = [
-    "FastAPI",
-    "APIRouter",
-    "Request",
-    "Response",
-    "Route",
-    "Extracted",
-    "Extractor",
-    "PathInt",
-    "PathStr",
-    "PathFloat",
-    "PathBool",
-    "QueryInt",
-    "QueryStr",
-    "QueryFloat",
-    "QueryBool",
-    "OptionalQueryInt",
-    "OptionalQueryStr",
-    "OptionalQueryFloat",
-    "OptionalQueryBool",
-    "HeaderInt",
-    "HeaderStr",
-    "HeaderFloat",
-    "HeaderBool",
-    "OptionalHeaderInt",
-    "OptionalHeaderStr",
-    "OptionalHeaderFloat",
-    "OptionalHeaderBool",
-    "Peer",
-    "BodyBytes",
-    "BodyText",
-    "Json",
-    "Cookies",
-    "Form",
-    "Multipart",
-    "Method",
-    "Status",
-    "StatusCode",
-    "ok",
-    "ok_json",
-    "spec_from_router",
-    "TestClient",
-]
+comptime StatusCode = Status
 
 def FastAPI() -> APIRouter:
     """Create a new APIRouter instance (FastAPI compatibility wrapper)."""

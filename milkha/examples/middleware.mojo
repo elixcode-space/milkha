@@ -1,11 +1,11 @@
 """Middleware example: Logger + Cors stacking on a Milkha router.
 
-Run with: `mojo run examples/middleware.mojo`
+Run with: `pixi run example middleware`
 """
 
-from milkha import FastAPI, Request, Response, ok, APIRouter
-from milkha.extract import PathInt, Extracted
-from flare.http.middleware import Logger, Cors, CorsConfig
+from milkha import APIRouter, Request, Response, ok
+from milkha.extract import PathInt
+from flare.http import Cors, CorsConfig, Logger
 from flare.net import SocketAddr
 
 
@@ -14,27 +14,26 @@ def home(req: Request) raises -> Response:
 
 
 def items(req: Request) raises -> Response:
-    let id = PathInt["id"].extract(req).value
-    return ok(f"item {id.value}")
+    var id = PathInt["id"].extract(req).value
+    return ok("item " + String(id))
 
 
-router = APIRouter()
-router.get("/", home)
-router.get("/items/{id}", items)
-
-# Wrap with CORS and Logger middleware
-cors_config = CorsConfig()
-cors_config.allowed_origins.append("*")
-cors_config.allowed_methods.append("GET")
-cors_config.allowed_methods.append("POST")
-cors_config.allow_credentials = False
-
-cors_layer = Cors(router^, cors_config)
-logger_layer = Logger(cors_layer)
-
-# Run server
-if __name__ == "__main__":
+def main() raises:
     from flare.http import HttpServer
 
-    srv = HttpServer.bind(SocketAddr.localhost(8080))
-    srv.serve(logger_layer, num_workers=2)
+    var router = APIRouter()
+    router.get("/", home)
+    router.get("/items/{id}", items)
+
+    # Wrap with CORS and Logger middleware
+    var cors_config = CorsConfig()
+    cors_config.allowed_origins.append("*")
+    cors_config.allowed_methods.append("GET")
+    cors_config.allowed_methods.append("POST")
+    cors_config.allow_credentials = False
+
+    var cors_layer = Cors(router^, cors_config)
+    var logger_layer = Logger(cors_layer^)
+
+    var srv = HttpServer.bind(SocketAddr.localhost(8080))
+    srv.serve(logger_layer^, num_workers=2)

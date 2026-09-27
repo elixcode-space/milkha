@@ -1,13 +1,11 @@
 """Basic Milkha example: hello world with path parameters.
 
-Run with: `mojo run examples/basic.mojo`
+Run with: `pixi run example basic`
 Then visit http://localhost:8080
 """
 
-from milkha import FastAPI, Request, Response, ok
-from milkha.extract import PathInt, HeaderStr, Extracted
-
-app = FastAPI()
+from milkha import APIRouter, FastAPI, Request, Response, ok
+from milkha.extract import PathInt, HeaderStr
 
 
 def home(req: Request) raises -> Response:
@@ -15,24 +13,27 @@ def home(req: Request) raises -> Response:
 
 
 def get_user(req: Request) raises -> Response:
-    return ok(f"user {req.param('user_id')}")
+    return ok("user " + req.param("user_id"))
 
 
 def get_item(req: Request) raises -> Response:
-    let item_id = PathInt["item_id"].extract(req).value
-    let user_agent = HeaderStr["User-Agent"].extract(req).value
-    return ok(f"item {item_id.value} for {user_agent.value}")
+    var item_id = PathInt["item_id"].extract(req).value
+    var user_agent = HeaderStr["User-Agent"].extract(req).value
+    return ok("item " + String(item_id) + " for " + user_agent)
 
 
-app.get("/", home)
-app.get("/users/{user_id}", get_user)
-app.get("/items/{item_id}", get_item)
+def build_app() raises -> APIRouter:
+    var app = FastAPI()
+    app.get("/", home)
+    app.get("/users/{user_id}", get_user)
+    app.get("/items/{item_id}", get_item)
+    return app^
 
 
-if __name__ == "__main__":
+def main() raises:
     from flare.http import HttpServer
     from flare.net import SocketAddr
 
-    # To run: `mojo run examples/basic.mojo`
-    srv = HttpServer.bind(SocketAddr.localhost(8080))
-    srv.serve(app, num_workers=2)
+    var app = build_app()
+    var srv = HttpServer.bind(SocketAddr.localhost(8080))
+    srv.serve(app^, num_workers=2)

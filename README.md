@@ -18,8 +18,8 @@ generation, and an in-process test client.
 - **Sub-router mounting** — `include_router(prefix, sub_router)` for composable
   applications
 - **Middleware support** — wrap any `Handler` (e.g. `Logger`, `Cors`)
-- **Performance optimized** — `@inline` hot paths, direct byte-level path
-  conversion, zero-allocation `serve()` delegate
+- **Performance optimized** — `@always_inline` hot paths, direct byte-level
+  path conversion, zero-allocation `serve()` delegate
 
 ## Install
 
@@ -41,29 +41,31 @@ pip install milkha
 
 ```mojo
 from milkha import FastAPI, Request, Response, ok
+from flare.http import HttpServer
+from flare.net import SocketAddr
 
-app = FastAPI()
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("Hello, Milkha!")
 
-app.get("/", home)
 
-if __name__ == "__main__":
-    from flare.http import HttpServer
-    from flare.net import SocketAddr
+def main() raises:
+    var app = FastAPI()
+    app.get("/", home)
 
-    srv = HttpServer.bind(SocketAddr.localhost(8080))
-    srv.serve(app, num_workers=2)
+    var srv = HttpServer.bind(SocketAddr.localhost(8080))
+    srv.serve(app^, num_workers=2)
 ```
+
+Run it with `pixi run run-example` (or `mojo run -I . your_file.mojo`).
 
 ## Typed extractors
 
 ```mojo
-from milkha import FastAPI, Request, Response, ok
+from milkha import APIRouter, FastAPI, Request, Response, ok
 from milkha.extract import Extracted, PathInt, OptionalQueryInt, HeaderStr
+from flare.http import Handler
 
-app = FastAPI()
 
 @fieldwise_init
 struct GetUser(Copyable, Defaultable, Handler, Movable):
@@ -77,31 +79,51 @@ struct GetUser(Copyable, Defaultable, Handler, Movable):
         self.auth = HeaderStr["Authorization"]()
 
     def serve(self, req: Request) raises -> Response:
-        return ok(f"user={self.id.value} page={self.page.value} auth={self.auth.value}")
+        return ok("user " + String(self.id.value) + " auth " + self.auth.value)
 
-app.get[Extracted[GetUser]]("/users/{id}", Extracted[GetUser]())
+
+def build_app() raises -> APIRouter:
+    var app = FastAPI()
+    app.get[Extracted[GetUser]]("/users/{id}", Extracted[GetUser]())
+    return app^
 ```
+
+`Extracted[H]` copies the prototype per request, downcasts each field to
+Flare's `Extractor`, and calls `apply(req)`; a failed extraction becomes
+HTTP 400. Set `State[T]` fields on the prototype to pass registration-time
+values (DB pool, config) through the same mechanism.
 
 ## Sub-routers and middleware
 
 ```mojo
-from milkha import FastAPI, APIRouter
-from flare.http.middleware import Logger, Cors, CorsConfig
+from milkha import FastAPI, APIRouter, Request, Response, ok
+from flare.http import Cors, CorsConfig, Logger
 
-api = APIRouter()
 
-def users(req: Request) -> Response:
+def users(req: Request) raises -> Response:
     return ok("user list")
 
-api.get("/users", users)
 
-app = FastAPI()
-app.include_router("/api/v1", api^)
+def main() raises:
+    var api = APIRouter()
+    api.get("/users", users)
 
-# Wrap with middleware
-cors = CorsConfig()
-cors.allowed_origins.append("*")
-layer = Logger(Cors(app^, cors))
+    var app = FastAPI()
+    # Mount prefixes must be literal: Flare's mount rejects "{param}" segments.
+    app.include_router("/api/v1", api^)
+
+    # Wrap with middleware
+    var cors = CorsConfig()
+    cors.allowed_origins.append("*")
+    var layer = Logger(Cors(app^, cors))
+```
+
+Handlers can also take typed inputs directly:
+
+```mojo
+def get_user(req: Request) raises -> Response:
+    var id = PathInt["user_id"].extract(req).value
+    return ok("user " + String(id))
 ```
 
 ## OpenAPI generation
@@ -109,31 +131,46 @@ layer = Logger(Cors(app^, cors))
 ```mojo
 from milkha import FastAPI, Request, Response, ok
 
-app = FastAPI()
-app.get("/health", lambda req: ok("ok"))
 
-# Generate spec
-let spec = app.openapi(title="My API", version="1.0.0")
-print(spec)
+def health(req: Request) raises -> Response:
+    return ok("ok")
+
+
+def main() raises:
+    var app = FastAPI()
+    app.get("/health", health)
+
+    # Generate spec
+    var spec = app.openapi(title="My API", version="1.0.0")
+    print(spec)
 ```
 
 ## Testing
 
 ```mojo
-from std.testing import assert_equal, TestSuite
+from std.testing import assert_equal
 from milkha import FastAPI, Request, Response, ok
 
-app = FastAPI()
 
-def home(req: Request) -> Response:
+def home(req: Request) raises -> Response:
     return ok("Hello!")
 
-app.get("/", home)
-client = app.test_client()
-var resp = client.get("/")
-assert_equal(resp.status, 200)
-assert_equal(resp.text(), "Hello!")
+
+def test_home() raises:
+    var app = FastAPI()
+    app.get("/", home)
+    var client = app.test_client()
+    var resp = client.get("/")
+    assert_equal(resp.status, 200)
+    assert_equal(resp.text(), "Hello!")
+
+
+def main() raises:
+    test_home()
 ```
+
+Mojo 1.0 has no `mojo test`; each test file is a standalone program whose
+`main()` calls its test functions, and `pixi run test` runs them all.
 
 ## Performance
 
@@ -141,10 +178,10 @@ Milkha is optimized for the Mojo language with the following techniques:
 
 - **Fast path conversion**: Paths without `{param}` templates skip conversion
   entirely and return a direct copy
-- **Direct byte writes**: Path conversion uses `unsafe_ptr` to write bytes
-  directly, avoiding per-character `chr()` / `Int()` overhead
+- **Direct byte writes**: Path conversion walks the source bytes once and
+  appends codepoints, avoiding per-character string concatenation
 - **Inline hot paths**: All route registration and dispatch methods are
-  decorated with `@inline` to eliminate call overhead
+  decorated with `@always_inline` to eliminate call overhead
 - **Zero-allocation serve**: The `serve()` method delegates directly to
   Flare's `Router` with no intermediate allocations
 

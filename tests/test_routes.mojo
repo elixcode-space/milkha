@@ -1,6 +1,6 @@
 """Tests for Milkha add_api_route and include_router."""
 
-from std.testing import assert_equal, assert_true, assert_raises, TestSuite
+from std.testing import assert_equal, assert_true, assert_raises
 
 from milkha import FastAPI, Request, Response, ok
 from milkha.core import APIRouter
@@ -10,7 +10,7 @@ def handler(req: Request) raises -> Response:
     return ok("ok")
 
 
-def test_add_api_route_single_method():
+def test_add_api_route_single_method() raises:
     app = APIRouter()
     app.add_api_route("/items", handler, ["GET"])
     client = app.test_client()
@@ -18,7 +18,7 @@ def test_add_api_route_single_method():
     assert_equal(response.status, 200)
 
 
-def test_add_api_route_multiple_methods():
+def test_add_api_route_multiple_methods() raises:
     app = APIRouter()
     app.add_api_route("/items", handler, ["GET", "POST"])
     client = app.test_client()
@@ -26,7 +26,7 @@ def test_add_api_route_multiple_methods():
     assert_equal(client.post("/items").status, 200)
 
 
-def test_add_api_route_all_methods():
+def test_add_api_route_all_methods() raises:
     app = APIRouter()
     app.add_api_route("/items", handler, ["GET", "POST", "PUT", "DELETE", "PATCH"])
     client = app.test_client()
@@ -37,13 +37,13 @@ def test_add_api_route_all_methods():
     assert_equal(client.patch("/items").status, 200)
 
 
-def test_add_api_route_unsupported_method():
+def test_add_api_route_unsupported_method() raises:
     app = APIRouter()
     with assert_raises():
         app.add_api_route("/items", handler, ["BOGUS"])
 
 
-def test_include_router():
+def test_include_router() raises:
     main_app = APIRouter()
     sub_app = APIRouter()
     sub_app.get("/users", handler)
@@ -53,17 +53,21 @@ def test_include_router():
     assert_equal(response.status, 200)
 
 
-def test_include_router_with_path_param():
+def test_include_router_rejects_param_prefix() raises:
+    # Flare's Router.mount only accepts literal prefixes, so a FastAPI-style
+    # parameterized mount prefix ("/api{v}") is rejected at registration.
     main_app = APIRouter()
     sub_app = APIRouter()
     sub_app.get("/items/{id}", handler)
-    main_app.include_router("/api{v}", sub_app^)
-    client = main_app.test_client()
-    response = client.get("/api1/items/42")
-    assert_equal(response.status, 200)
+    var raised = False
+    try:
+        main_app.include_router("/api{v}", sub_app^)
+    except:
+        raised = True
+    assert_true(raised)
 
 
-def test_route_count_after_mount():
+def test_route_count_after_mount() raises:
     main_app = APIRouter()
     sub_app = APIRouter()
     sub_app.get("/users", handler)
@@ -73,4 +77,10 @@ def test_route_count_after_mount():
 
 
 def main() raises:
-    TestSuite.discover_tests[__functions_in_module__]().run()
+    test_add_api_route_single_method()
+    test_add_api_route_multiple_methods()
+    test_add_api_route_all_methods()
+    test_add_api_route_unsupported_method()
+    test_include_router()
+    test_include_router_rejects_param_prefix()
+    test_route_count_after_mount()
