@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "milkha"
-version = "0.1.0"
+version = "0.1.1"
 description = "A FastAPI-compatible web framework for Mojo, built on Flare."
 readme = "README.md"
 license = "MPL-2.0"
@@ -46,6 +46,18 @@ Source = "https://github.com/elixcode-space/milkha"
 
 [tool.hatch.build.targets.wheel]
 packages = ["milkha"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"milkha/__init__.mojo" = "milkha/__init__.mojo"
+"milkha/core.mojo" = "milkha/core.mojo"
+"milkha/extract.mojo" = "milkha/extract.mojo"
+"milkha/openapi.mojo" = "milkha/openapi.mojo"
+"milkha/test.mojo" = "milkha/test.mojo"
+"milkha/examples/basic.mojo" = "milkha/examples/basic.mojo"
+"milkha/examples/crud.mojo" = "milkha/examples/crud.mojo"
+"milkha/examples/extractors.mojo" = "milkha/examples/extractors.mojo"
+"milkha/examples/middleware.mojo" = "milkha/examples/middleware.mojo"
+"milkha/examples/openapi.mojo" = "milkha/examples/openapi.mojo"
 
 [tool.hatch.build.targets.sdist]
 include = [
