@@ -16,7 +16,9 @@ jobs:
       - name: Install pixi
         uses: prefix-dev/setup-pixi@v0.10.2
         with:
-          pixi-version: "latest"
+          # Must match the pixi that produced pixi.lock (lock format v7);
+          # newer pixi refuses the lockfile and CI installs with --locked.
+          pixi-version: "0.70.2"
 
       - name: Install dependencies
         run: pixi install --verbose
@@ -35,7 +37,9 @@ jobs:
       - name: Install pixi
         uses: prefix-dev/setup-pixi@v0.10.2
         with:
-          pixi-version: "latest"
+          # Must match the pixi that produced pixi.lock (lock format v7);
+          # newer pixi refuses the lockfile and CI installs with --locked.
+          pixi-version: "0.70.2"
 
       - name: Install dependencies
         run: pixi install --verbose
