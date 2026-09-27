@@ -14,6 +14,8 @@ Public API:
 from flare.prelude import *  # Request, Response, Router, HttpServer, ok, etc.
 from flare.http import (
     Handler,
+    Method,
+    Status,
     PathInt,
     PathStr,
     QueryInt,
@@ -28,6 +30,9 @@ from .extract import Extracted
 from .openapi import spec_from_router
 from .test import TestClient
 
+# Re-export Status constants for FastAPI compatibility
+StatusCode = Status
+
 # Public exports
 __all__ = [
     "FastAPI",
@@ -36,6 +41,9 @@ __all__ = [
     "Response",
     "Route",
     "Extracted",
+    "Method",
+    "Status",
+    "StatusCode",
     "ok",
     "ok_json",
     "spec_from_router",
