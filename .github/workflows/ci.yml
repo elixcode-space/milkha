@@ -18,7 +18,7 @@ jobs:
         with:
           # Must match the pixi that produced pixi.lock (lock format v7);
           # newer pixi refuses the lockfile and CI installs with --locked.
-          pixi-version: "0.70.2"
+          pixi-version: "v0.70.2"
 
       - name: Install dependencies
         run: pixi install --verbose
@@ -39,7 +39,7 @@ jobs:
         with:
           # Must match the pixi that produced pixi.lock (lock format v7);
           # newer pixi refuses the lockfile and CI installs with --locked.
-          pixi-version: "0.70.2"
+          pixi-version: "v0.70.2"
 
       - name: Install dependencies
         run: pixi install --verbose
